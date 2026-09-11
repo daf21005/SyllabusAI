@@ -1,8 +1,12 @@
-import requests
+import logging
 import os
+
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 # pull Blackboard credentials from .env file
 BASE_URL = os.getenv("BB_BASE_URL")
@@ -18,7 +22,7 @@ def get_token():
 
     # if something goes wrong, print the error and return None
     if response.status_code != 200:
-        print(f"Token error: {response.status_code} {response.text}")
+        logger.error(f"Token error: {response.status_code} {response.text}")
         return None
 
     return response.json()["access_token"]
@@ -27,8 +31,8 @@ def get_token():
 def auth_header(token):
     return {"Authorization": f"Bearer {token}"}
 
-# Gets basic info about a student using their Blackboard user ID
-# Returns name, email, student ID
+# gets basic info about a student using their Blackboard user ID
+# returns name, email, student ID
 def get_student_info(user_id):
     token = get_token()
     if not token:
@@ -40,12 +44,12 @@ def get_student_info(user_id):
     )
 
     if response.status_code != 200:
-        print(f"Student info error: {response.status_code} {response.text}")
+        logger.error(f"Student info error: {response.status_code} {response.text}")
         return None
     
     return response.json()
 
-
+# gets a list of all courses for a specific student
 def get_student_courses(user_id):
     token = get_token()
     if not token:
@@ -57,11 +61,12 @@ def get_student_courses(user_id):
     )
 
     if response.status_code != 200:
-        print(f"Student courses error: {response.status_code} {response.text}")
+        logger.error(f"Student courses error: {response.status_code} {response.text}")
         return None
 
     return response.json()
 
+# gets the gradebook columns for a specific course
 def get_gradebook_columns(course_id):
     token = get_token()
     if not token:
@@ -77,11 +82,12 @@ def get_gradebook_columns(course_id):
 
     # we get a back request or conflict
     if response.status_code != 200:
-        print(f"Gradebook columns error: {response.status_code} {response.text}")
+        logger.error(f"Gradebook columns error: {response.status_code} {response.text}")
         return None
     
     return response.json()
 
+# gets the grade for a specific student in a specific course and column
 def get_student_grade(course_id, column_id, user_id):
     token = get_token()
     if not token:
@@ -93,11 +99,12 @@ def get_student_grade(course_id, column_id, user_id):
     )
 
     if response.status_code != 200:
-        print(f"Student grade error: {response.status_code} {response.text}")
+        logger.error(f"Student grade error: {response.status_code} {response.text}")
         return None
     
     return response.json()
 
+# gets the overall grade for a specific student in a specific course
 def get_overall_grade(course_id, user_id):
     token = get_token()
     if not token:
@@ -109,7 +116,7 @@ def get_overall_grade(course_id, user_id):
     )
 
     if response.status_code != 200:
-        print(f"Overall grade error: {response.status_code} {response.text}")
+        logger.error(f"Overall grade error: {response.status_code} {response.text}")
         return None
     
     return response.json()

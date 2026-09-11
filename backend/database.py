@@ -32,6 +32,7 @@ def init_db():
             course_name TEXT NOT NULL,
             credits INTEGER NOT NULL,
             current_grade REAL,
+            UNIQUE(student_id, course_name),
             FOREIGN KEY (student_id) REFERENCES students(id)
         )
     """)
@@ -44,6 +45,7 @@ def init_db():
             student_id INTEGER NOT NULL,
             semester TEXT NOT NULL,
             gpa REAL NOT NULL,
+            UNIQUE(student_id, semester),
             FOREIGN KEY (student_id) REFERENCES students(id)
         )
     """)
@@ -56,6 +58,7 @@ def init_db():
             category TEXT NOT NULL,
             weight_percentage REAL NOT NULL,
             current_score REAL,
+            UNIQUE(course_id, category),
             FOREIGN KEY (course_id) REFERENCES courses(id)
         )
     """)
@@ -86,7 +89,7 @@ def save_course(student_id, course_name, credits, current_grade):
     
     # INSERT INTO courses table
     cursor.execute("""
-        INSERT INTO courses (student_id, course_name, credits, current_grade)
+        INSERT OR IGNORE INTO courses (student_id, course_name, credits, current_grade)
         VALUES (?, ?, ?, ?)
         
     """, (student_id, course_name, credits, current_grade))
@@ -100,7 +103,7 @@ def save_gpa_history(student_id, semester, gpa):
     
     # INSERT INTO gpa_history table
     cursor.execute("""
-        INSERT INTO gpa_history (student_id, semester, gpa)
+        INSERT OR IGNORE INTO gpa_history (student_id, semester, gpa)
         VALUES (?, ?, ?)
     """, (student_id, semester, gpa))
     
@@ -113,14 +116,13 @@ def save_course_weights(course_id, category, weight_percentage, current_score):
     
     # INSERT INTO course_weights table
     cursor.execute("""
-        INSERT INTO course_weights (course_id, category, weight_percentage, current_score)
+        INSERT OR REPLACE INTO course_weights (course_id, category, weight_percentage, current_score)
         VALUES (?, ?, ?, ?)
     """, (course_id, category, weight_percentage, current_score))
     
     conn.commit()
     conn.close()
 
-# WIP
 # READ from the db
 def get_student(blackboard_id):
     conn = get_connection()
@@ -181,13 +183,3 @@ def get_course_weights(course_id):
     rows = cursor.fetchall()
     conn.close()
     return rows
-
-''' Hint:
-Inserting:
-INSERT INTO table_name (column1, column2, column3)
-VALUES (?, ?, ?)
-
-Selecting:
-SELECT * FROM table_name
-WHERE column_name = ?
-''' 
