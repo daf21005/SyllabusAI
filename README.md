@@ -1,15 +1,62 @@
-# SyllabusAI - Student Planning | Hackathon Project
+# SyllabusAI - Student Academic Planning Tool
 
-SyllabusAI is a work-in-progress student planning tool built to help organize coursework in one place. The app combines a FastAPI backend from BlackBoard with a Streamlit frontend to show courses, grades, GPA information, and assignment timelines in a simple dashboard. It also includes early support for syllabus upload and AI-based grading-scale parsing, plus mock data and placeholder integrations where the full product still needs to be finished.
+SyllabusAI is a student planning tool built to help students whose Universities uses Blackbord to track grades, calculate GPA, and make informed decisions about whether to drop or stay in a course. It combines a FastAPI backend with a Streamlit frontend to display courses, grades, GPA information, and assignment timelines in a single dashboard. It also includes syllabus upload and AI-based grading scal parsing via Google Gemini
 
-This is not the final product yet. The project is still being actively worked on, so some pieces are incomplete, mocked, or subject to change as development continues. We created a version that can be used within the ```final/``` directory.
+__This project is used for portfolio and resume purposes only.__ It is not a finished product and is actively being developed. You may run a presentable version that uses old code at the directory ```final/```.
 
-## What to run
-Use the app in `final/`:
-- Backend: FastAPI (`final/backend`)
-- Frontend: Streamlit (`final/frontend`)
+---
 
-## Prerequisites
+## Current State
+
+### Backend (`backend/`)
+The backend has been fully restructured and its core functionalities are working:
+- All REST API endpoints are operational and tested
+- SQLite database is connected and persisting data correctly
+- Google Gemini AI integration is working - pases syllabus PDFs and text to extract grading scales
+- Blackboard REST API OAuth2 integration is written but requires real institutional credentials to activate
+- Mock data is used in place of live Blackboard data
+
+__Note:__ The database has no authentication or access proection implemented. All endpoints are publicly accessible. This is ententianal for demonstation purposes.
+
+### Frontend (`frontend/`)
+The frontend Streamlit app is functional as apresentable demo but it is not fully connected to the restructed backend. The `final/` directory contains the version used for demos.
+
+
+### Blackboard Integration
+The Blackboard API functions are fully written but require real `BB_APP_KEY` and `BB_APP_SECRET` credentials from the [Anthology Developer Portal](https://developer.blackboard.com). Without these, the app runs on mock student and course data.
+
+---
+
+## Project Structure
+
+```
+SyllabusAI/
+├── backend/              <- restructured backend (active development)
+│   ├── main.py           <- FastAPI entry point
+│   ├── database.py       <- SQLite connection and CRUD functions
+│   ├── mock_data.py      <- mock student, course, and grade data
+│   ├── blackboard.py     <- Blackboard API functions (needs credentials)
+│   ├── routes/           <- API endpoint definitions
+│   │   ├── courses.py
+│   │   ├── grades.py
+│   │   └── syllabus.py
+│   ├── services/         <- business logic
+│   │   ├── gemini_service.py
+│   │   ├── gpa_service.py
+│   │   └── blackboard_service.py
+│   ├── models/           <- Pydantic data models
+│   │   └── schemas.py
+│   └── middleware/       <- authentication (not yet implemented)
+│       └── auth.py
+├── frontend/             <- Streamlit frontend (partner's work)
+├── final/                <- presentable demo version
+└── old/                  <- earlier iterations kept for reference
+```
+
+## Running the Demo Version (`final/`)
+The `final/` directory is the stable demo version used for presentations.
+
+### Prerequisites
 - Python 3.10+
 - `pip`
 
@@ -20,47 +67,89 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 ```
 
-## 2) Install dependencies
+### 2) Install dependencies
 ```bash
 python -m pip install -r final/backend/requirements.txt
 python -m pip install -r final/frontend/requirements.txt
 ```
 
-## 3) Run the backend (Terminal 1)
+### 3) Add environment variables
+Create a `.env` file inside `final/backend/`:
+```env
+GEMINI_API_KEY=your_key_here
+```
+If this key is missing, all pages still load but AI syllabus parsing will not work.
+
+### 4) Run the backend (Terminal 1)
 ```bash
 cd final/backend
 python -m uvicorn main:app --reload --port 8000
 ```
+Backend should be available at: `http://127.0.0.1:8000`
 
-Backend should be available at:
-- http://127.0.0.1:8000
-
-## 4) Run the frontend (Terminal 2)
+### 5) Run the frontend (Terminal 2)
 ```bash
 cd final/frontend
 python -m streamlit run app.py --server.port 8501
 ```
+Frontend should be available at: `http://localhost:8501`
 
-Frontend should be available at:
-- http://localhost:8501
+---
 
-## Optional environment variables
-For syllabus parsing with Gemini, create a `.env` file in `final/backend/`:
-```env
-GEMINI_API_KEY=your_key_here
+## Running the Active Backend (`backend/`)
+
+The restructured backend can be tested via FastAPI's built-in interactive API docs at `http://localhost:8000/docs`
+### Prerequisites
+- Python 3.10+
+- `.env` file inside `backend/` with your Gemini API key
+
+### 1) Activate virtual environment
+```bash
+cd backend
+source ../.venv/bin/activate
 ```
 
-If this key is missing, core app pages still run, but AI parsing endpoints may not work.
+### 2) Install dependencies
+```bash
+pip install -r requirements.txt
+```
 
-## Quick test checklist
-1. Open http://127.0.0.1:8000 and confirm you see a JSON message.
-2. Open http://localhost:8501 and confirm the Streamlit app loads.
-3. Navigate Home, Gantt Chart, and Grades pages.
-4. (Optional) Try syllabus upload and parsing if `GEMINI_API_KEY` is set.
+### 3) Run the backend
+```bash
+python -m uvicorn main:app --reload --port 8000
+```
 
-## Notes
-- [BlackBoard API's](https://developer.blackboard.com/portal/displayApi)
-- The `final/` directory is the version intended for demos/testing.
-- Older iterations are in `backend/`, `frontend/`, and `old/` for reference.
-- The `backend/` main components are complete, currently using mock data (July 9, 2026)
-- The `frontend/` is still WIP
+### 4) Open API docs
+```
+http://localhost:8000/docs
+```
+
+### Available Endpoints
+```
+GET  /                                    Health check
+GET  /api/student                         Returns mock student info
+GET  /api/courses/{student_id}            Returns courses with assignments
+GET  /api/courses/{course_id}/recommendation  Drop or stay recommendation
+GET  /api/grades/{student_id}             Returns letter grades per course
+GET  /api/gpa                             Calculates current GPA
+POST /api/upload/{course_id}              Upload syllabus PDF — Gemini extracts grading scale
+POST /api/syllabus/parse/{course_id}      Paste syllabus text — Gemini extracts grading scale
+```
+
+---
+
+## Known Limitations
+
+- No authentication or API key protection on any endpoint
+- Blackboard integration requires real institutional credentials
+- Database uses SQLite — not suitable for multi-user production use
+- Frontend is not yet connected to the restructured backend
+- Google Gemini free tier may experience high demand errors (503) during peak hours
+
+---
+
+## References
+
+- [Blackboard Learn REST API](https://developer.blackboard.com/portal/displayApi)
+- [Google Gemini API](https://ai.google.dev/gemini-api/docs)
+- [FastAPI Documentation](https://fastapi.tiangolo.com)
